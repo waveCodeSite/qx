@@ -1,25 +1,25 @@
 /*
 美团抢券
-功能：qx自动重写抓取请求体 ，重放请求（定时任务），默认重放200次，第22行自行修改。
+功能：qx自动重写抓取请求体 ，重放请求（定时任务），默认重放100次，第22行自行修改。
 
 Author: Curtin
 date 2023.5.25
 
 V2P/圈叉：
-
-[mitm]
-promotion.waimai.meituan.com
-
+# 重写
 [rewrite_remote]
-#抓取body
-romotion.waimai.meituan.com/lottery/limitcouponcomponent/fetchcoupon url script-request-body https://raw.githubusercontent.com/curtinlv/qx/main/scripts/pkc-mt.js
+https://raw.githubusercontent.com/curtinlv/qx/main/rewrite/pkc.conf, tag=pkc, update-interval=172800, opt-parser=false, enabled=true
+
+[rewrite_local]
+# 更改时间（uptime-mt.js文件保存到qx目录文件scripts下面，抓包时候就改下时间。）
+promotion.waimai.meituan.com/lottery/limitcouponcomponent/(getTime|info) url script-response-body uptime-mt.js
 
 [task_local]
-#定时抢券
-58 59 17 * * * https://raw.githubusercontent.com/curtinlv/qx/main/scripts/pkc-mt.js, tag=美团抢卷, enabled=false
+# 定时抢券
+58 59 14 * * * https://raw.githubusercontent.com/curtinlv/qx/main/scripts/pkc-mt.js, tag=美团抢卷, enabled=true
 */
 const $ = Env("美团抢卷");
-const pkc_qjnum = 50;  // 重放200次
+const pkc_qjnum = 100;  // 重放100次
 // 如果想查看当前是否已经抓取Body ， 把下面 pkc_select = 2;
 pkc_select = 1; // 1:抢券 2：仅打印当前环境变量 body header url参数
 
@@ -163,19 +163,20 @@ async function pkc_mtqj(timeout = 0) {
                 headers: JSON.parse(mt_headers),
                 body: pkc_mt_body,
             };
-            console.log(JSON.stringify(url));
+//             console.log(JSON.stringify(url));
             $.post(url, async (err, resp, data) => {
                 try {
                     if (logs) $.log(`开始抢券🚩: ${data}`);
                     $.signget = JSON.parse(data);
                     // console.log(JSON.stringify($.signget));
                     if ($.signget.code === 0 && $.signget.subcode === 0){
-                        console.log(`【成功抢券】：${data}\n`);
-                        $.message += `【成功抢券】：${data}\n`;
+//                         console.log(`[${new Date().toISOString().replace('T', ' ').replace('Z', '')}]【成功抢券】：${data}\n`);
+                        console.log(`[${new Date().toLocaleString('en-US', { timeZone: 'Asia/Shanghai', hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 }).replace(',', '').replace(/\//g, '-')}]【成功抢券】：${$.signget.msg}\n`);
+                        $.message += `【成功抢券】：${$.signget.msg}\n`;
                         pkc_flag = true;
                     }else if ($.signget.code === 1 && $.signget.subcode === 2){
-                        console.log(`【成功抢券】：${data}\n`);
-                        $.message += `【成功抢券】：${data}\n`;
+                        console.log(`[${new Date().toLocaleString('en-US', { timeZone: 'Asia/Shanghai', hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 }).replace(',', '').replace(/\//g, '-')}]【成功抢券】：${$.signget.msg}\n`);
+                        $.message += `【成功抢券】：${$.signget.msg}\n`;
                         pkc_flag = true;
                     }
 //                     else if (($.signget.code === 1) && ($.signget.subcode === 1 || $.signget.subcode === 11)){
@@ -184,11 +185,11 @@ async function pkc_mtqj(timeout = 0) {
 //                         pkc_flag = true;
 //                     }
                     else if ($.signget.code === 1 && $.signget.subcode === 3){
-                        console.log(`【继续尝试】：${data}\n`);
-                        $.message += `【继续尝试】：${data}\n`;
+                        console.log(`【继续尝试】：${$.signget.msg}\n`);
+//                         $.message += `【继续尝试】：${data}\n`;
                     }else{
-                        console.log(`【抢券失败】：${data}\n`);
-                        $.message += `【抢券失败】：${data}\n`;
+                        console.log(`[${new Date().toLocaleString('en-US', { timeZone: 'Asia/Shanghai', hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 }).replace(',', '').replace(/\//g, '-')}]【抢券失败】：${$.signget.msg}\n`);
+                        $.message += `【抢券失败】：${$.signget.msg}\n`;
                         pkc_flag = true;
                     }
                 } catch (e) {
